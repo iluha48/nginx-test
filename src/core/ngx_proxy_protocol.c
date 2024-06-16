@@ -320,6 +320,78 @@ ngx_proxy_protocol_write(ngx_connection_t *c, u_char *buf, u_char *last)
 
     return ngx_slprintf(buf, last, " %ui %ui" CRLF, port, lport);
 }
+u_char *
+ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last, ngx_array_t *tlvs) {
+    u_char      *p;
+    ngx_keyval_t *kv;
+    ngx_uint_t   i;
+    uint16_t     tlv_length = 0;
+
+    static u_char ppv2_signature[] = {
+            0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51,
+            0x55, 0x49, 0x54, 0x0A, 0x02, 0x00, 0x00, 0x00
+    };
+
+    p = buf;
+
+    p = ngx_cpymem(p, ppv2_signature, sizeof(ppv2_signature));
+
+    *p++ = 0x21;
+
+    switch (c->sockaddr->sa_family) {
+        case AF_INET: {
+            struct sockaddr_in *sin = (struct sockaddr_in *) c->sockaddr;
+            struct sockaddr_in *lsin = (struct sockaddr_in *) c->local_sockaddr;
+
+            *p++ = 0x11;
+
+            p = ngx_cpymem(p, &sin->sin_addr, 4);
+            p = ngx_cpymem(p, &lsin->sin_addr, 4);
+            p = ngx_cpymem(p, &sin->sin_port, 2);
+            p = ngx_cpymem(p, &lsin->sin_port, 2);
+            break;
+        }
+#if (NGX_HAVE_INET6)
+            case AF_INET6: {
+            struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *) c->sockaddr;
+            struct sockaddr_in6 *lsin6 = (struct sockaddr_in6 *) c->local_sockaddr;
+
+            *p++ = 0x21;
+
+            p = ngx_cpymem(p, &sin6->sin6_addr, 16);
+            p = ngx_cpymem(p, &lsin6->sin6_addr, 16);
+            p = ngx_cpymem(p, &sin6->sin6_port, 2);
+            p = ngx_cpymem(p, &lsin6->sin6_port, 2);
+            break;
+        }
+#endif
+        default:
+            return ngx_cpymem(p, "UNKNOWN", sizeof("UNKNOWN") - 1);
+    }
+
+    if (tlvs != NULL) {
+        kv = tlvs->elts;
+        for (i = 0; i < tlvs->nelts; i++) {
+            tlv_length += 3 + kv[i].value.len;
+        }
+    }
+
+    uint16_t header_length = (p - buf - sizeof(ppv2_signature)) + tlv_length;
+    buf[14] = (header_length >> 8) & 0xff;
+    buf[15] = header_length & 0xff;
+
+    if (tlvs != NULL) {
+        for (i = 0; i < tlvs->nelts; i++) {
+            *p++ = ngx_atoi(kv[i].key.data, kv[i].key.len);
+            *p++ = (kv[i].value.len >> 8) & 0xff;
+            *p++ = kv[i].value.len & 0xff;
+            p = ngx_cpymem(p, kv[i].value.data, kv[i].value.len);
+        }
+    }
+
+    return p;
+}
+
 
 
 static u_char *
