@@ -329,8 +329,8 @@ u_char
     uint16_t     tlv_length = 0;
 
     static u_char ppv2_signature[] = {
-            0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51,
-            0x55, 0x49, 0x54, 0x0A, 0x02, 0x00, 0x00, 0x00
+            '0x0D', '0x0A', '0x0D', '0x0A', '0x00', '0x0D', '0x0A', '0x51',
+            '0x55', '0x49', '0x54', '0x0A', '0x02', '0x00', '0x00', '0x00'
     };
 
     p = buf;
@@ -339,9 +339,9 @@ u_char
     p = ngx_cpymem(p, ppv2_signature, sizeof(ppv2_signature));
 
     // Версия и команда (PROXY и TCP over IPv4)
-    *p++ = 0x21;
+    *p++ = '0x21';
     // Семейство адресов и транспортный протокол (AF_INET и STREAM)
-    *p++ = 0x11;
+    *p++ = '0x11';
 
     // Заполнение адресов источника и назначения
     p = ngx_cpymem(p, &((struct sockaddr_in *) c->sockaddr)->sin_addr, 4);
