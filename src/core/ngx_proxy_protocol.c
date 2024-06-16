@@ -65,7 +65,7 @@ typedef struct {
     ngx_uint_t                              type;
 } ngx_proxy_protocol_tlv_entry_t;
 
-
+u_char *ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last, ngx_array_t *tlvs);
 static u_char *ngx_proxy_protocol_read_addr(ngx_connection_t *c, u_char *p,
     u_char *last, ngx_str_t *addr);
 static u_char *ngx_proxy_protocol_read_port(u_char *p, u_char *last,
@@ -333,7 +333,6 @@ ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last, ngx_
     };
 
     p = buf;
-
     p = ngx_cpymem(p, ppv2_signature, sizeof(ppv2_signature));
 
     *p++ = 0x21;
@@ -368,7 +367,7 @@ ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last, ngx_
         default:
             return ngx_cpymem(p, "UNKNOWN", sizeof("UNKNOWN") - 1);
     }
-
+/*
     if (tlvs != NULL) {
         kv = tlvs->elts;
         for (i = 0; i < tlvs->nelts; i++) {
@@ -382,15 +381,20 @@ ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last, ngx_
 
     if (tlvs != NULL) {
         for (i = 0; i < tlvs->nelts; i++) {
-            *p++ = ngx_atoi(kv[i].key.data, kv[i].key.len);
+            ngx_int_t key_val = ngx_atoi(kv[i].key.data, kv[i].key.len);
+            if (key_val == NGX_ERROR) {
+                return NULL; // Обработка ошибки преобразования
+            }
+            *p++ = (u_char) key_val;
             *p++ = (kv[i].value.len >> 8) & 0xff;
             *p++ = kv[i].value.len & 0xff;
             p = ngx_cpymem(p, kv[i].value.data, kv[i].value.len);
         }
     }
-
+*/
     return p;
 }
+
 
 
 

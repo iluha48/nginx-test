@@ -990,7 +990,7 @@ ngx_stream_proxy_send_proxy_protocol(ngx_stream_session_t *s)
     ngx_connection_t             *c, *pc;
     ngx_stream_upstream_t        *u;
     ngx_stream_proxy_srv_conf_t  *pscf;
-    u_char                        buf[NGX_PROXY_PROTOCOL_V2_MAX_HEADER];  // Использование нового размера буфера
+    u_char                        buf[NGX_PROXY_PROTOCOL_V2_MAX_HEADER];
 
     c = s->connection;
 
