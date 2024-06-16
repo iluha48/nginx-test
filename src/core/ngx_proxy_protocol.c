@@ -323,9 +323,9 @@ ngx_proxy_protocol_write(ngx_connection_t *c, u_char *buf, u_char *last)
 u_char *
 ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last, ngx_array_t *tlvs) {
     u_char      *p;
-    ngx_keyval_t *kv;
-    ngx_uint_t   i;
-    uint16_t     tlv_length = 0;
+    /*  ngx_keyval_t *kv;
+      ngx_uint_t   i;
+      uint16_t     tlv_length = 0; */
 
     static u_char ppv2_signature[] = {
             0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51,
