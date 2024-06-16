@@ -320,12 +320,13 @@ ngx_proxy_protocol_write(ngx_connection_t *c, u_char *buf, u_char *last)
 
     return ngx_slprintf(buf, last, " %ui %ui" CRLF, port, lport);
 }
-u_char *
-ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last, ngx_array_t *tlvs) {
+
+u_char
+*ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last, ngx_array_t *tlvs) {
     u_char      *p;
-    /*  ngx_keyval_t *kv;
-      ngx_uint_t   i;
-      uint16_t     tlv_length = 0; */
+    ngx_keyval_t *kv;
+    ngx_uint_t   i;
+    uint16_t     tlv_length = 0;
 
     static u_char ppv2_signature[] = {
             0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51,
@@ -333,69 +334,46 @@ ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last, ngx_
     };
 
     p = buf;
+
+    // Копирование сигнатуры PPv2
     p = ngx_cpymem(p, ppv2_signature, sizeof(ppv2_signature));
 
+    // Версия и команда (PROXY и TCP over IPv4)
     *p++ = 0x21;
+    // Семейство адресов и транспортный протокол (AF_INET и STREAM)
+    *p++ = 0x11;
 
-    switch (c->sockaddr->sa_family) {
-        case AF_INET: {
-            struct sockaddr_in *sin = (struct sockaddr_in *) c->sockaddr;
-            struct sockaddr_in *lsin = (struct sockaddr_in *) c->local_sockaddr;
+    // Заполнение адресов источника и назначения
+    p = ngx_cpymem(p, &((struct sockaddr_in *) c->sockaddr)->sin_addr, 4);
+    p = ngx_cpymem(p, &((struct sockaddr_in *) c->local_sockaddr)->sin_addr, 4);
+    p = ngx_cpymem(p, &((struct sockaddr_in *) c->sockaddr)->sin_port, 2);
+    p = ngx_cpymem(p, &((struct sockaddr_in *) c->local_sockaddr)->sin_port, 2);
 
-            *p++ = 0x11;
-
-            p = ngx_cpymem(p, &sin->sin_addr, 4);
-            p = ngx_cpymem(p, &lsin->sin_addr, 4);
-            p = ngx_cpymem(p, &sin->sin_port, 2);
-            p = ngx_cpymem(p, &lsin->sin_port, 2);
-            break;
-        }
-#if (NGX_HAVE_INET6)
-            case AF_INET6: {
-            struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *) c->sockaddr;
-            struct sockaddr_in6 *lsin6 = (struct sockaddr_in6 *) c->local_sockaddr;
-
-            *p++ = 0x21;
-
-            p = ngx_cpymem(p, &sin6->sin6_addr, 16);
-            p = ngx_cpymem(p, &lsin6->sin6_addr, 16);
-            p = ngx_cpymem(p, &sin6->sin6_port, 2);
-            p = ngx_cpymem(p, &lsin6->sin6_port, 2);
-            break;
-        }
-#endif
-        default:
-            return ngx_cpymem(p, "UNKNOWN", sizeof("UNKNOWN") - 1);
-    }
-/*
+    // Подсчет общей длины TLV-векторов
     if (tlvs != NULL) {
         kv = tlvs->elts;
         for (i = 0; i < tlvs->nelts; i++) {
-            tlv_length += 3 + kv[i].value.len;
+            tlv_length += 3 + kv[i].value.len; // 1 байт типа, 2 байта длины, длина значения
         }
     }
 
-    uint16_t header_length = (p - buf - sizeof(ppv2_signature)) + tlv_length;
-    buf[14] = (header_length >> 8) & 0xff;
-    buf[15] = header_length & 0xff;
+    // Установка длины PPv2 заголовка (длина адресов + длина TLV)
+    uint16_t header_length = 12 + tlv_length;
+    *p++ = (header_length >> 8) & 0xff;
+    *p++ = header_length & 0xff;
 
+    // Добавление TLV-векторов, если они существуют
     if (tlvs != NULL) {
         for (i = 0; i < tlvs->nelts; i++) {
-            ngx_int_t key_val = ngx_atoi(kv[i].key.data, kv[i].key.len);
-            if (key_val == NGX_ERROR) {
-                return NULL; // Обработка ошибки преобразования
-            }
-            *p++ = (u_char) key_val;
-            *p++ = (kv[i].value.len >> 8) & 0xff;
-            *p++ = kv[i].value.len & 0xff;
-            p = ngx_cpymem(p, kv[i].value.data, kv[i].value.len);
+            *p++ = ngx_atoi(kv[i].key.data, kv[i].key.len); // Тип TLV
+            *p++ = (kv[i].value.len >> 8) & 0xff;           // Длина TLV (старший байт)
+            *p++ = kv[i].value.len & 0xff;                  // Длина TLV (младший байт)
+            p = ngx_cpymem(p, kv[i].value.data, kv[i].value.len); // Значение TLV
         }
     }
-*/
+
     return p;
 }
-
-
 
 
 static u_char *
