@@ -103,7 +103,7 @@ typedef struct {
     ngx_uint_t                              type;
 } ngx_proxy_protocol_tlv_entry_t;
 
-u_char *ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last, ngx_array_t *tlvs);
+
 static u_char *ngx_proxy_protocol_read_addr(ngx_connection_t *c, u_char *p,
     u_char *last, ngx_str_t *addr);
 static u_char *ngx_proxy_protocol_read_port(u_char *p, u_char *last,
@@ -387,7 +387,7 @@ u_char
             header->addr.ip4.dst_addr =
                     ((struct sockaddr_in *) dst)->sin_addr.s_addr;
             header->addr.ip4.dst_port = ((struct sockaddr_in *) dst)->sin_port;
-            break;
+
 
         /*
 #if (NGX_HAVE_INET6)
