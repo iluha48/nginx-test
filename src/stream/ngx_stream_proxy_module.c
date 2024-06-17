@@ -999,7 +999,7 @@ ngx_stream_proxy_send_proxy_protocol(ngx_stream_session_t *s)
 
     pscf = ngx_stream_get_module_srv_conf(s, ngx_stream_proxy_module);
 
-    if (proxy_protocol_version == 2) {
+    if (pscf->proxy_protocol_version == 2) {
         p = ngx_proxy_protocol_v2_write(c, buf, buf + NGX_PROXY_PROTOCOL_V1_MAX_HEADER);
     }
     else{p = ngx_proxy_protocol_write(c, buf,
