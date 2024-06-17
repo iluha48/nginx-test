@@ -2111,7 +2111,7 @@ ngx_stream_proxy_create_srv_conf(ngx_conf_t *cf)
      *     conf->upstream = NULL;
      *     conf->upstream_value = NULL;
      */
-
+    conf->proxy_protocol_version = NGX_CONF_UNSET_UINT;
     conf->connect_timeout = NGX_CONF_UNSET_MSEC;
     conf->timeout = NGX_CONF_UNSET_MSEC;
     conf->next_upstream_timeout = NGX_CONF_UNSET_MSEC;
@@ -2149,6 +2149,9 @@ ngx_stream_proxy_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 {
     ngx_stream_proxy_srv_conf_t *prev = parent;
     ngx_stream_proxy_srv_conf_t *conf = child;
+
+    ngx_conf_merge_uint_value(conf->proxy_protocol_version,
+                              prev->proxy_protocol_version, 1);
 
     ngx_conf_merge_msec_value(conf->connect_timeout,
                               prev->connect_timeout, 60000);
