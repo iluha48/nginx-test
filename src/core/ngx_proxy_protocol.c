@@ -363,10 +363,6 @@ u_char
 *ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last) {
     struct sockaddr                 *src, *dst;
     ngx_proxy_protocol_v2_header_t  *header;
-
-
-
-
     header = (ngx_proxy_protocol_v2_header_t *) buf;
     src = c->sockaddr;
     dst = c->local_sockaddr;
@@ -375,10 +371,10 @@ u_char
 
     header->version_command = NGX_PROXY_PROTOCOL_V2_CMD_PROXY;
 
-    switch (c->sockaddr->sa_family) {
+ /*   switch (c->sockaddr->sa_family) {
         case AF_INET: {
             struct sockaddr_in *sin = (struct sockaddr_in *) c->sockaddr;
-            struct sockaddr_in *lsin = (struct sockaddr_in *) c->local_sockaddr;
+            struct sockaddr_in *lsin = (struct sockaddr_in *) c->local_sockaddr;*/
 
             // Семейство адресов и транспортный протокол (AF_INET и STREAM)
             header->family_transport = NGX_PROXY_PROTOCOL_V2_FAM_INET;
@@ -392,6 +388,7 @@ u_char
             header->addr.ip4.dst_port = ((struct sockaddr_in *) dst)->sin_port;
             break;
         }
+        /*
 #if (NGX_HAVE_INET6)
             case AF_INET6: {
             struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *) c->sockaddr;
@@ -410,16 +407,17 @@ u_char
             break;
         }
 #endif
+         */
         default:
             ngx_log_debug1(NGX_LOG_DEBUG_CORE, c->log, 0,
                            "PROXY protocol v2 unsupported dest address family %ui",
                            dst->sa_family);
     }
-#if (NGX_HAVE_INET6)
+/* #if (NGX_HAVE_INET6)
     len = NGX_PROXY_PROTOCOL_V2_HDR_LEN_INET6;
-#else
+#else */
     len = NGX_PROXY_PROTOCOL_V2_HDR_LEN_INET;
-#endif
+
 
 
 
