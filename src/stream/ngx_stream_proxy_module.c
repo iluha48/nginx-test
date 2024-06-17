@@ -56,8 +56,8 @@ typedef struct {
 #endif
     ngx_stream_upstream_srv_conf_t  *upstream;
     ngx_stream_complex_value_t      *upstream_value;
-    ngx_uint_t proxy_protocol_version;      /* PP version */
-    ngx_array_t *proxy_protocol_tlvs;       /* TLV-vector array */
+    ngx_uint_t                      proxy_protocol_version;      /* PP version */
+    ngx_array_t                     *proxy_protocol_tlvs;       /* TLV-vector array */
 
 } ngx_stream_proxy_srv_conf_t;
 
@@ -999,13 +999,10 @@ ngx_stream_proxy_send_proxy_protocol(ngx_stream_session_t *s)
 
     pscf = ngx_stream_get_module_srv_conf(s, ngx_stream_proxy_module);
 
-    if (pscf->proxy_protocol_version == 2) {
-        p = ngx_proxy_protocol_v2_write(c, buf,
-                                        buf + NGX_PROXY_PROTOCOL_V2_MAX_HEADER, pscf->proxy_protocol_tlvs);
-    } else {
-        p = ngx_proxy_protocol_write(c, buf,
-                                     buf + NGX_PROXY_PROTOCOL_V1_MAX_HEADER);
-    }
+
+    p = ngx_proxy_protocol_write(c, buf,
+                                 buf + NGX_PROXY_PROTOCOL_V1_MAX_HEADER, pscf->proxy_protocol_version);
+
 
     if (p == NULL) {
         ngx_stream_proxy_finalize(s, NGX_STREAM_INTERNAL_SERVER_ERROR);

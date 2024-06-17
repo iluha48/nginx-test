@@ -315,7 +315,7 @@ ngx_proxy_protocol_read_port(u_char *p, u_char *last, in_port_t *port,
 
 
 u_char *
-ngx_proxy_protocol_write(ngx_connection_t *c, u_char *buf, u_char *last)
+ngx_proxy_protocol_write(ngx_connection_t *c, u_char *buf, u_char *last, ngx_uint_t pp_version)
 {
     ngx_uint_t  port, lport;
 
@@ -328,7 +328,9 @@ ngx_proxy_protocol_write(ngx_connection_t *c, u_char *buf, u_char *last)
     if (ngx_connection_local_sockaddr(c, NULL, 0) != NGX_OK) {
         return NULL;
     }
-
+    if (pp_version == 2) {
+        return ngx_proxy_protocol_v2_write(c, buf, last);
+    }
     switch (c->sockaddr->sa_family) {
 
     case AF_INET:
@@ -359,8 +361,8 @@ ngx_proxy_protocol_write(ngx_connection_t *c, u_char *buf, u_char *last)
     return ngx_slprintf(buf, last, " %ui %ui" CRLF, port, lport);
 }
 
-u_char
-*ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last) {
+static u_char *
+ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last) {
     struct sockaddr                 *src, *dst;
     ngx_proxy_protocol_v2_header_t  *header;
     header = (ngx_proxy_protocol_v2_header_t *) buf;
