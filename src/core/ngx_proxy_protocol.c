@@ -360,7 +360,7 @@ ngx_proxy_protocol_write(ngx_connection_t *c, u_char *buf, u_char *last)
 }
 
 u_char
-*ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last, ) {
+*ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last) {
     struct sockaddr                 *src, *dst;
     ngx_proxy_protocol_v2_header_t  *header;
 
