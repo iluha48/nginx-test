@@ -9,16 +9,14 @@
 #include <ngx_core.h>
 
 
-#define NGX_PROXY_PROTOCOL_AF_INET          1
-#define NGX_PROXY_PROTOCOL_AF_INET6         2
+#define NGX_PROXY_PROTOCOL_AF_INET              1
+#define NGX_PROXY_PROTOCOL_AF_INET6             2
 
-#define NGX_PROXY_PROTOCOL_V2_SIG              "\x0D\x0A\x0D\x0A\x00\x0D\x0A\x51\x55\x49\x54\x0A"
-#define NGX_PROXY_PROTOCOL_V2_SIG_LEN          12
-#define NGX_PROXY_PROTOCOL_V2_HDR_LEN          16
-#define NGX_PROXY_PROTOCOL_V2_HDR_LEN_INET \
-                (NGX_PROXY_PROTOCOL_V2_HDR_LEN + (4 + 4 + 2 + 2))
-#define NGX_PROXY_PROTOCOL_V2_HDR_LEN_INET6 \
-                (NGX_PROXY_PROTOCOL_V2_HDR_LEN + (16 + 16 + 2 + 2))
+#define NGX_PROXY_PROTOCOL_V2_SIG               "\x0D\x0A\x0D\x0A\x00\x0D\x0A\x51\x55\x49\x54\x0A"
+#define NGX_PROXY_PROTOCOL_V2_SIG_LEN           12
+#define NGX_PROXY_PROTOCOL_V2_HDR_LEN           16
+#define NGX_PROXY_PROTOCOL_V2_HDR_LEN_INET      28
+#define NGX_PROXY_PROTOCOL_V2_HDR_LEN_INET6     52
 
 #define NGX_PROXY_PROTOCOL_V2_CMD_PROXY        (0x20 | 0x01)
 
@@ -27,6 +25,9 @@
 #define NGX_PROXY_PROTOCOL_V2_FAM_UNSPEC       0x00
 #define NGX_PROXY_PROTOCOL_V2_FAM_INET         0x11
 #define NGX_PROXY_PROTOCOL_V2_FAM_INET6        0x22
+
+#define PP2_TYPE_ALPN                          0x01
+#define PP2_TYPE_AUTHORITY                     0x02
 
 #define ngx_proxy_protocol_parse_uint16(p)                                    \
     ( ((uint16_t) (p)[0] << 8)                                                \
@@ -84,6 +85,7 @@ typedef struct {
     uint8_t                       family_transport;
     uint16_t                      len;
     ngx_proxy_protocol_addrs_t    addr;
+
 } ngx_proxy_protocol_v2_header_t;
 
 typedef struct {
@@ -102,6 +104,7 @@ typedef struct {
     ngx_str_t                               name;
     ngx_uint_t                              type;
 } ngx_proxy_protocol_tlv_entry_t;
+
 
 
 static u_char *ngx_proxy_protocol_read_addr(ngx_connection_t *c, u_char *p,
@@ -419,6 +422,21 @@ ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last) {
 #else */
     len = NGX_PROXY_PROTOCOL_V2_HDR_LEN_INET;
 
+
+    u_char *p = buf + len;
+    ngx_proxy_protocol_tlv_t tlvs[] = {
+            { PP2_TYPE_ALPN, 3, (u_char *)"h2" },
+            { PP2_TYPE_AUTHORITY, 9, (u_char *)"localhost" }
+    };
+
+    for (size_t i = 0; i < sizeof(tlvs) / sizeof(tlvs[0]); i++) {
+        ngx_proxy_protocol_tlv_t *tlv = &tlvs[i];
+        *p++ = tlv->type;
+        *p++ = tlv->length;
+        ngx_memcpy(p, tlv->value, tlv->length);
+        p += tlv->length;
+        len += 2 + tlv->length;
+    }
 
 
 
