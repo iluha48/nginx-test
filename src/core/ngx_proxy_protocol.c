@@ -315,7 +315,7 @@ ngx_proxy_protocol_read_port(u_char *p, u_char *last, in_port_t *port,
 
 
 u_char *
-ngx_proxy_protocol_write(ngx_connection_t *c, u_char *buf, u_char *last)
+ngx_proxy_protocol_write(ngx_connection_t *c, u_char *buf, u_char *last, ngx_uint_t pp_version)
 {
     ngx_uint_t  port, lport;
 
