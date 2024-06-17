@@ -103,7 +103,7 @@ typedef struct {
     ngx_uint_t                              type;
 } ngx_proxy_protocol_tlv_entry_t;
 
-static u_char *ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last);
+u_char *ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last);
 static u_char *ngx_proxy_protocol_read_addr(ngx_connection_t *c, u_char *p,
     u_char *last, ngx_str_t *addr);
 static u_char *ngx_proxy_protocol_read_port(u_char *p, u_char *last,
@@ -359,7 +359,7 @@ ngx_proxy_protocol_write(ngx_connection_t *c, u_char *buf, u_char *last)
     return ngx_slprintf(buf, last, " %ui %ui" CRLF, port, lport);
 }
 
-static u_char *
+u_char *
 ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last) {
     struct sockaddr                 *src, *dst;
     ngx_proxy_protocol_v2_header_t  *header;
