@@ -93,12 +93,7 @@ typedef struct {
     u_char                                  len[2];
 } ngx_proxy_protocol_tlv_t;
 
-typedef struct  {
-    uint8_t type;
-    uint8_t length_hi;
-    uint8_t length_lo;
-    uint8_t value[0];
-} pp2_tlv;
+
 
 typedef struct {
     u_char                                  client;
