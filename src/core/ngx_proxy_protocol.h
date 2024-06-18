@@ -30,7 +30,7 @@ typedef struct {
     u_char length_hi;
     u_char length_lo;
     u_char value[]; // Flexible array member for value
-} pp2_tlv_t;
+} pp2_tlv;
 
 
 u_char *ngx_proxy_protocol_read(ngx_connection_t *c, u_char *buf,
