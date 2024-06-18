@@ -427,15 +427,15 @@ ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last, pp2_
 
     u_char *p = buf + len;
 
-    tlv_vec = tlv;
+    tlv_vec = *tlv;
 
-    *p++ = tlv->type;
-    *p++ = tlv->lenght_hi;
-    *p++ = tlv->length_lo;
-    *p++ = tlv->value;
+    *p++ = tlv_vec->type;
+    *p++ = tlv_vec->lenght_hi;
+    *p++ = tlv_vec->length_lo;
+    *p++ = tlv_vec->value;
 
 
-    len += 2 + tlv->length;
+
 
 
     header->len = htons(len - NGX_PROXY_PROTOCOL_V2_HDR_LEN);
