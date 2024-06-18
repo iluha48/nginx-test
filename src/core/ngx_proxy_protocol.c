@@ -364,11 +364,10 @@ ngx_proxy_protocol_write(ngx_connection_t *c, u_char *buf, u_char *last)
 }
 
 u_char *
-ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last, struct pp2_tlv *tlv) {
+ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last, pp2_tlv_t *tlv) {
     struct sockaddr                 *src, *dst;
     ngx_proxy_protocol_v2_header_t  *header;
     header = (ngx_proxy_protocol_v2_header_t *) buf;
-    struct pp2_tlv                   *tlv_vec;
     size_t                           len, value_length;
     src = c->sockaddr;
     dst = c->local_sockaddr;
@@ -391,25 +390,21 @@ ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last, stru
 
     u_char *p = buf + len;
 
-    tlv_vec = tlv;
+    *p++ = tlv->type;
+    *p++ = tlv->length_hi;
+    *p++ = tlv->length_lo;
 
-    *p++ = tlv_vec->type;
-    *p++ = tlv_vec->length_hi;
-    *p++ = tlv_vec->length_lo;
+    // Calculating the length of the value
+    value_length = (tlv->length_hi << 8) | tlv->length_lo;
 
-
-    value_length = (tlv_vec->length_hi << 8) | tlv_vec->length_lo;
-
-
+    // Copying the value to the buffer
     for (size_t i = 0; i < value_length; ++i) {
-        *p++ = tlv_vec->value[i];
+        *p++ = tlv->value[i];
     }
 
     header->len = htons(len - NGX_PROXY_PROTOCOL_V2_HDR_LEN + value_length);
-    return buf + len + value_length;
+    return buf + len + value_length; // Return pointer includes value length
 }
-
-
 
 static u_char *
 ngx_proxy_protocol_v2_read(ngx_connection_t *c, u_char *buf, u_char *last)

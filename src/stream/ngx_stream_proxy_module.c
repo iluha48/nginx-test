@@ -415,40 +415,49 @@ static uint8_t ngx_get_tlv_type(ngx_str_t *type_str) {
         return NGX_ERROR;
     }
 }
+u_char *
+ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last, pp2_tlv_t *tlv) {
+    struct sockaddr                 *src, *dst;
+    ngx_proxy_protocol_v2_header_t  *header;
+    header = (ngx_proxy_protocol_v2_header_t *) buf;
+    size_t                           len, value_length;
+    src = c->sockaddr;
+    dst = c->local_sockaddr;
+    ngx_memcpy(header->signature, NGX_PROXY_PROTOCOL_V2_SIG,
+               NGX_PROXY_PROTOCOL_V2_SIG_LEN);
 
-static char *ngx_stream_proxy_protocol_tlv(ngx_conf_t *cf, ngx_command_t *cmd, void *conf) {
-    ngx_stream_proxy_srv_conf_t *pscf = conf;
-    ngx_str_t *value;
-    uint16_t len;
-    pp2_tlv_t *tlv;
+    header->version_command = NGX_PROXY_PROTOCOL_V2_CMD_PROXY;
 
-    if (cf->args->nelts != 3) {
-        return NGX_CONF_ERROR;
+    header->family_transport = NGX_PROXY_PROTOCOL_V2_FAM_INET;
+    len = NGX_PROXY_PROTOCOL_V2_HDR_LEN_INET;
+
+    header->addr.ip4.src_addr =
+            ((struct sockaddr_in *) src)->sin_addr.s_addr;
+    header->addr.ip4.src_port = ((struct sockaddr_in *) src)->sin_port;
+    header->addr.ip4.dst_addr =
+            ((struct sockaddr_in *) dst)->sin_addr.s_addr;
+    header->addr.ip4.dst_port = ((struct sockaddr_in *) dst)->sin_port;
+
+    len = NGX_PROXY_PROTOCOL_V2_HDR_LEN_INET;
+
+    u_char *p = buf + len;
+
+    *p++ = tlv->type;
+    *p++ = tlv->length_hi;
+    *p++ = tlv->length_lo;
+
+    // Calculating the length of the value
+    value_length = (tlv->length_hi << 8) | tlv->length_lo;
+
+    // Copying the value to the buffer
+    for (size_t i = 0; i < value_length; ++i) {
+        *p++ = tlv->value[i];
     }
 
-    value = cf->args->elts;
-    uint8_t tlv_type = ngx_get_tlv_type(&value[1]);
-    if (tlv_type == NGX_ERROR) {
-        return NGX_CONF_ERROR;
-    }
-
-    len = value[2].len;
-
-    tlv = ngx_palloc(cf->pool, sizeof(pp2_tlv_t) + len);
-    if (tlv == NULL) {
-        return NGX_CONF_ERROR;
-    }
-
-    tlv->type = tlv_type;
-    tlv->length_hi = (uint8_t) ((len >> 8) & 0xFF);
-    tlv->length_lo = (uint8_t) (len & 0xFF);
-
-    ngx_memcpy(tlv->value, value[2].data, len);
-
-    pscf->tlv = tlv;
-
-    return NGX_CONF_OK;
+    header->len = htons(len - NGX_PROXY_PROTOCOL_V2_HDR_LEN + value_length);
+    return buf + len + value_length; // Return pointer includes value length
 }
+
 
 
 static void
