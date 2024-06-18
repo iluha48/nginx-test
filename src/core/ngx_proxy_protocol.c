@@ -369,7 +369,7 @@ ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last, stru
     ngx_proxy_protocol_v2_header_t  *header;
     header = (ngx_proxy_protocol_v2_header_t *) buf;
     struct pp2_tlv                   *tlv_vec;
-    size_t                           len;
+    size_t                           len, value_length;
     src = c->sockaddr;
     dst = c->local_sockaddr;
     ngx_memcpy(header->signature, NGX_PROXY_PROTOCOL_V2_SIG,
@@ -377,70 +377,38 @@ ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last, stru
 
     header->version_command = NGX_PROXY_PROTOCOL_V2_CMD_PROXY;
 
- /*   switch (c->sockaddr->sa_family) {
-        case AF_INET: {
-            struct sockaddr_in *sin = (struct sockaddr_in *) c->sockaddr;
-            struct sockaddr_in *lsin = (struct sockaddr_in *) c->local_sockaddr;*/
-
-            // Семейство адресов и транспортный протокол (AF_INET и STREAM)
-            header->family_transport = NGX_PROXY_PROTOCOL_V2_FAM_INET;
-            len = NGX_PROXY_PROTOCOL_V2_HDR_LEN_INET;
-            // Адреса и порты
-            header->addr.ip4.src_addr =
-                    ((struct sockaddr_in *) src)->sin_addr.s_addr;
-            header->addr.ip4.src_port = ((struct sockaddr_in *) src)->sin_port;
-            header->addr.ip4.dst_addr =
-                    ((struct sockaddr_in *) dst)->sin_addr.s_addr;
-            header->addr.ip4.dst_port = ((struct sockaddr_in *) dst)->sin_port;
-
-
-        /*
-#if (NGX_HAVE_INET6)
-            case AF_INET6: {
-            struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *) c->sockaddr;
-            struct sockaddr_in6 *lsin6 = (struct sockaddr_in6 *) c->local_sockaddr;
-
-            // Семейство адресов и транспортный протокол (AF_INET6 и STREAM)
-            header->family_transport = NGX_PROXY_PROTOCOL_V2_FAM_INET6;
-
-            // Адреса и порты
-            ngx_memcpy(header->addr.ip6.src_addr,
-                &((struct sockaddr_in6 *) src)->sin6_addr, 16);
-            header->addr.ip6.src_port = ((struct sockaddr_in6 *) src)->sin6_port;
-            ngx_memcpy(header->addr.ip6.dst_addr,
-                &((struct sockaddr_in6 *) dst)->sin6_addr, 16);
-            header->addr.ip6.dst_port = ((struct sockaddr_in6 *) dst)->sin6_port;
-            break;
-        }
-#endif
-
-        default:
-            ngx_log_debug1(NGX_LOG_DEBUG_CORE, c->log, 0,
-                           "PROXY protocol v2 unsupported dest address family %ui",
-                           dst->sa_family);
-    }*/
-/* #if (NGX_HAVE_INET6)
-    len = NGX_PROXY_PROTOCOL_V2_HDR_LEN_INET6;
-#else */
+    header->family_transport = NGX_PROXY_PROTOCOL_V2_FAM_INET;
     len = NGX_PROXY_PROTOCOL_V2_HDR_LEN_INET;
 
+    header->addr.ip4.src_addr =
+            ((struct sockaddr_in *) src)->sin_addr.s_addr;
+    header->addr.ip4.src_port = ((struct sockaddr_in *) src)->sin_port;
+    header->addr.ip4.dst_addr =
+            ((struct sockaddr_in *) dst)->sin_addr.s_addr;
+    header->addr.ip4.dst_port = ((struct sockaddr_in *) dst)->sin_port;
+
+    len = NGX_PROXY_PROTOCOL_V2_HDR_LEN_INET;
 
     u_char *p = buf + len;
 
     tlv_vec = tlv;
 
     *p++ = tlv_vec->type;
-    *p++ = tlv_vec->lenght_hi;
+    *p++ = tlv_vec->length_hi;
     *p++ = tlv_vec->length_lo;
-    *p++ = tlv_vec->value;
 
 
+    value_length = (tlv_vec->length_hi << 8) | tlv_vec->length_lo;
 
 
+    for (size_t i = 0; i < value_length; ++i) {
+        *p++ = tlv_vec->value[i];
+    }
 
-    header->len = htons(len - NGX_PROXY_PROTOCOL_V2_HDR_LEN);
-    return buf + len;
+    header->len = htons(len - NGX_PROXY_PROTOCOL_V2_HDR_LEN + value_length);
+    return buf + len + value_length;
 }
+
 
 
 static u_char *

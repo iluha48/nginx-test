@@ -29,7 +29,7 @@ struct  pp2_tlv{
     uint8_t type;
     uint8_t length_hi;
     uint8_t length_lo;
-    uint8_t value[0];
+    u_char *value;
 } ;
 
 u_char *ngx_proxy_protocol_read(ngx_connection_t *c, u_char *buf,
