@@ -364,7 +364,7 @@ ngx_proxy_protocol_write(ngx_connection_t *c, u_char *buf, u_char *last)
 }
 
 u_char *
-ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last, pp2_tlv_t *tlv) {
+ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last, struct pp2_tlv_t *tlv) {
     struct sockaddr                 *src, *dst;
     ngx_proxy_protocol_v2_header_t  *header;
     header = (ngx_proxy_protocol_v2_header_t *) buf;
