@@ -93,6 +93,12 @@ typedef struct {
     u_char                                  len[2];
 } ngx_proxy_protocol_tlv_t;
 
+typedef struct  {
+    uint8_t type;
+    uint8_t length_hi;
+    uint8_t length_lo;
+    uint8_t value[0];
+} pp2_tlv;
 
 typedef struct {
     u_char                                  client;
@@ -363,13 +369,14 @@ ngx_proxy_protocol_write(ngx_connection_t *c, u_char *buf, u_char *last)
 }
 
 u_char *
-ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last) {
+ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last, pp2_tlv *tlv) {
     struct sockaddr                 *src, *dst;
     ngx_proxy_protocol_v2_header_t  *header;
     header = (ngx_proxy_protocol_v2_header_t *) buf;
+    struct pp2_tlv                   *tlv_vec;
+    size_t                           len;
     src = c->sockaddr;
     dst = c->local_sockaddr;
-    size_t                           len;
     ngx_memcpy(header->signature, NGX_PROXY_PROTOCOL_V2_SIG,
                NGX_PROXY_PROTOCOL_V2_SIG_LEN);
 
@@ -424,20 +431,16 @@ ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last) {
 
 
     u_char *p = buf + len;
-    ngx_proxy_protocol_tlv_t tlvs[] = {
-            { PP2_TYPE_ALPN, 3, (u_char *)"h2" },
-            { PP2_TYPE_AUTHORITY, 9, (u_char *)"localhost" }
-    };
 
-    for (size_t i = 0; i < sizeof(tlvs) / sizeof(tlvs[0]); i++) {
-        ngx_proxy_protocol_tlv_t *tlv = &tlvs[i];
-        *p++ = tlv->type;
-        *p++ = tlv->length;
-        ngx_memcpy(p, tlv->value, tlv->length);
-        p += tlv->length;
-        len += 2 + tlv->length;
-    }
+    tlv_vec = tlv;
 
+    *p++ = tlv->type;
+    *p++ = tlv->lenght_hi;
+    *p++ = tlv->length_lo;
+    *p++ = tlv->value;
+
+
+    len += 2 + tlv->length;
 
 
     header->len = htons(len - NGX_PROXY_PROTOCOL_V2_HDR_LEN);
