@@ -93,7 +93,12 @@ typedef struct {
     u_char                                  len[2];
 } ngx_proxy_protocol_tlv_t;
 
-
+struct pp2_tlv{
+    u_char type;
+    u_char length_hi;
+    u_char length_lo;
+    u_char value[]; // Flexible array member for value
+} ;
 
 typedef struct {
     u_char                                  client;

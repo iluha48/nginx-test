@@ -25,12 +25,7 @@ struct ngx_proxy_protocol_s {
     in_port_t           dst_port;
     ngx_str_t           tlvs;
 };
-struct pp2_tlv{
-    u_char type;
-    u_char length_hi;
-    u_char length_lo;
-    u_char value[]; // Flexible array member for value
-} ;
+
 
 
 u_char *ngx_proxy_protocol_read(ngx_connection_t *c, u_char *buf,
