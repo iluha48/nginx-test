@@ -420,12 +420,12 @@ ngx_stream_proxy_protocol_tlv(ngx_conf_t *cf, ngx_command_t *cmd, void *conf) {
     ngx_stream_proxy_srv_conf_t *pscf = conf;
     ngx_str_t *value;
     uint16_t len;
-    pp2_tlv_t *tlv;
+    pp2_tlv_t *tlv_vec;
 
     if (cf->args->nelts != 3) {
         return NGX_CONF_ERROR;
     }
-
+    tlv_vec = pscf->tlv;
     value = cf->args->elts;
     uint8_t tlv_type = ngx_get_tlv_type(&value[1]);
     if (tlv_type == NGX_ERROR) {
@@ -434,18 +434,18 @@ ngx_stream_proxy_protocol_tlv(ngx_conf_t *cf, ngx_command_t *cmd, void *conf) {
 
     len = value[2].len;
 
-    tlv = ngx_palloc(cf->pool, sizeof(pp2_tlv_t) + len);
-    if (tlv == NULL) {
+    tlv_vec = ngx_palloc(cf->pool, sizeof(pp2_tlv_t) + len);
+    if (tlv_vec == NULL) {
         return NGX_CONF_ERROR;
     }
 
-    tlv->type = tlv_type;
-    tlv->length_hi = (uint8_t) ((len >> 8) & 0xFF);
-    tlv->length_lo = (uint8_t) (len & 0xFF);
+    tlv_vec->type = tlv_type;
+    tlv_vec->length_hi = (uint8_t) ((len >> 8) & 0xFF);
+    tlv_vec->length_lo = (uint8_t) (len & 0xFF);
 
-    ngx_memcpy(tlv->value, value[2].data, len);
+    ngx_memcpy(tlv_vec->value, value[2].data, len);
 
-    pscf->tlv = tlv;
+
 
     return NGX_CONF_OK;
 }
