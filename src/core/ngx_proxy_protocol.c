@@ -369,6 +369,7 @@ ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last, pp2_
     ngx_proxy_protocol_v2_header_t  *header;
     header = (ngx_proxy_protocol_v2_header_t *) buf;
     size_t                           len, value_length;
+    pp2_tlv                          *tlv_vec;
     src = c->sockaddr;
     dst = c->local_sockaddr;
     ngx_memcpy(header->signature, NGX_PROXY_PROTOCOL_V2_SIG,
@@ -389,17 +390,17 @@ ngx_proxy_protocol_v2_write(ngx_connection_t *c, u_char *buf, u_char *last, pp2_
     len = NGX_PROXY_PROTOCOL_V2_HDR_LEN_INET;
 
     u_char *p = buf + len;
-
-    *p++ = tlv->type;
-    *p++ = tlv->length_hi;
-    *p++ = tlv->length_lo;
+    tlv_vec = tlv;
+    *p++ = tlv_vec->type;
+    *p++ = tlv_vec->length_hi;
+    *p++ = tlv_vec->length_lo;
 
     // Calculating the length of the value
-    value_length = (tlv->length_hi << 8) | tlv->length_lo;
+    value_length = (tlv_vec->length_hi << 8) | tlv_vec->length_lo;
 
     // Copying the value to the buffer
     for (size_t i = 0; i < value_length; ++i) {
-        *p++ = tlv->value[i];
+        *p++ = tlv_vec->value[i];
     }
 
     header->len = htons(len - NGX_PROXY_PROTOCOL_V2_HDR_LEN + value_length);
